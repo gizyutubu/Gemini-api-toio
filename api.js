@@ -1,72 +1,55 @@
 (function(Scratch) {
   'use strict';
+  if (!Scratch) return;
 
-  class ToioGeminiExtension {
+  class GeminiToio {
     constructor() {
       this.apiKey = '';
-      this.lastResponse = '';
+      this.reply = '';
     }
-
     getInfo() {
       return {
-        id: 'toiogemini',
-        name: 'Gemini AI for toio',
+        id: 'geminitoio',
+        name: 'Gemini AI',
         color1: '#4285F4',
         blocks: [
           {
-            opcode: 'setApiKey',
+            opcode: 'setKey',
             blockType: Scratch.BlockType.COMMAND,
             text: 'Gemini APIキーを [KEY] に設定',
-            arguments: {
-              KEY: { type: Scratch.ArgumentType.STRING, defaultValue: 'YOUR_API_KEY' }
-            }
+            arguments: { KEY: { type: Scratch.ArgumentType.STRING, defaultValue: '' } }
           },
           {
-            opcode: 'askGemini',
+            opcode: 'ask',
             blockType: Scratch.BlockType.COMMAND,
             text: 'Gemini に指示: [PROMPT]',
-            arguments: {
-              PROMPT: { type: Scratch.ArgumentType.STRING, defaultValue: 'toioの移動方向（前/右/左/後ろ）を1文字で答えて' }
-            }
+            arguments: { PROMPT: { type: Scratch.ArgumentType.STRING, defaultValue: '前、右、左、後ろのいずれか1文字で答えて' } }
           },
           {
-            opcode: 'getResponse',
+            opcode: 'getReply',
             blockType: Scratch.BlockType.REPORTER,
             text: 'Geminiの返答'
           }
         ]
       };
     }
-
-    setApiKey(args) {
-      this.apiKey = args.KEY;
-    }
-
-    async askGemini(args) {
-      if (!this.apiKey) {
-        this.lastResponse = 'APIキー未設定';
-        return;
-      }
+    setKey(args) { this.apiKey = args.KEY; }
+    async ask(args) {
+      if (!this.apiKey) { this.reply = 'APIキー未設定'; return; }
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
-        const response = await fetch(url, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: args.PROMPT }] }]
-          })
+          body: JSON.stringify({ contents: [{ parts: [{ text: args.PROMPT }] }] })
         });
-        const data = await response.json();
-        this.lastResponse = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'エラー';
+        const data = await res.json();
+        this.reply = data.candidates[0].content.parts[0].text.trim();
       } catch (e) {
-        this.lastResponse = '通信エラー';
+        this.reply = 'エラー';
       }
     }
-
-    getResponse() {
-      return this.lastResponse;
-    }
+    getReply() { return this.reply; }
   }
 
-  Scratch.extensions.register(new ToioGeminiExtension());
-})(Scratch);
+  Scratch.extensions.register(new GeminiToio());
+})(window.Scratch);
