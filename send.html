@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratch 送信送信パネル</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #121826;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 12px;
+      width: 360px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    h2 { font-size: 1.1rem; margin-bottom: 16px; color: #2dd4bf; }
+    textarea {
+      width: 100%;
+      height: 80px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      box-sizing: border-box;
+      resize: none;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      background: #0d9488;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #14b8a6; }
+    .status { margin-top: 10px; font-size: 0.8rem; color: #94a3b8; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Scratch へメッセージ送信</h2>
+    <textarea id="msgInput" placeholder="Scratchに表示させたい文字を入力..."></textarea>
+    <button id="sendBtn">送信する</button>
+    <div class="status" id="status">同じブラウザの別タブで TurboWarp を開いてください</div>
+  </div>
+
+  <script>
+    // チャンネル名を一致させる
+    const channel = new BroadcastChannel('turbowarp-bridge');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const status = document.getElementById('status');
+
+    function send() {
+      const text = msgInput.value.trim();
+      if (!text) return;
+
+      // TurboWarp へ送信
+      channel.postMessage(text);
+
+      status.textContent = `送信済み: "${text}"`;
+      msgInput.value = '';
+    }
+
+    sendBtn.addEventListener('click', send);
+    msgInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+  </script>
+</body>
+</html>
