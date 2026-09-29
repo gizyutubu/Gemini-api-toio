@@ -2,312 +2,89 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini toio Response Monitor</title>
+  <title>Scratch 通信モニター</title>
   <style>
-    :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --accent-color: #3b82f6;
-      --text-color: #f8fafc;
-      --sub-text: #94a3b8;
-      --border-color: #334155;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      margin: 0;
+      padding: 16px;
+      background: #0f172a;
+      color: #fff;
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: 16px;
-      gap: 16px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    h1 { font-size: 1.25rem; font-weight: 600; color: var(--accent-color); }
-
-    .grid-container {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 16px;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
+      box-sizing: border-box;
       gap: 12px;
     }
-
-    label { font-size: 0.85rem; color: var(--sub-text); }
-    input, select, textarea, button {
-      width: 100%;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      background: #0f172a;
-      color: var(--text-color);
-      font-size: 0.9rem;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent-color);
-    }
-
-    button {
-      background: var(--accent-color);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-      transition: opacity 0.2s;
-    }
-    button:hover { opacity: 0.9; }
-    button:disabled { background: var(--border-color); cursor: not-allowed; }
-
-    /* Action Direction Indicator */
-    .action-display {
-      text-align: center;
-      padding: 20px;
-      background: #0f172a;
-      border-radius: 8px;
-      border: 2px dashed var(--border-color);
-    }
-    .action-title { font-size: 0.8rem; color: var(--sub-text); }
-    .action-value {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: #38bdf8;
-      margin-top: 8px;
-    }
-
-    /* Response & Log Area */
-    .main-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow: hidden;
-    }
-    
-    .chat-log {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-right: 8px;
-    }
-
-    .msg {
-      padding: 12px 16px;
-      border-radius: 8px;
-      max-width: 85%;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .msg.user {
-      align-self: flex-end;
-      background: #2563eb;
-      color: white;
-    }
-    .msg.ai {
-      align-self: flex-start;
-      background: #334155;
-      color: var(--text-color);
-      border-left: 4px solid var(--accent-color);
-    }
-    .msg.system {
-      align-self: center;
-      background: transparent;
-      color: var(--sub-text);
-      font-size: 0.8rem;
-    }
-
-    .input-group {
+    .controls {
       display: flex;
       gap: 8px;
+      background: #1e293b;
+      padding: 12px;
+      border-radius: 8px;
     }
-    .input-group textarea {
-      resize: none;
-      height: 50px;
+    input {
+      flex: 1;
+      padding: 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: white;
+      border-radius: 6px;
+      font-size: 1rem;
     }
-    .input-group button {
-      width: 100px;
-      height: 50px;
+    button {
+      padding: 10px 20px;
+      background: #0d9488;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background: #14b8a6; }
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      background: #000;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Gemini toio Monitor</h1>
-    <div id="status" style="font-size:0.85rem; color: var(--sub-text);">準備完了</div>
-  </header>
-
-  <div class="grid-container">
-    <!-- 設定 & アクションパネル -->
-    <div class="card">
-      <h3>設定 & アクション情報</h3>
-
-      <div>
-        <label for="apiKey">Gemini API Key</label>
-        <input type="password" id="apiKey" placeholder="APIキーを入力">
-      </div>
-
-      <div>
-        <label for="model">モデル</label>
-        <select id="model">
-          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-          <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-          <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="systemInstruction">システムプロンプト (役割設定)</label>
-        <textarea id="systemInstruction" style="height:70px;">あなたはtoioの操作アシスタントです。回答には必ず [前], [後], [左], [右], [停止] のいずれかを含めてください。</textarea>
-      </div>
-
-      <!-- 最新のアクション表示 -->
-      <div class="action-display">
-        <div class="action-title">検出された toio アクション</div>
-        <div class="action-value" id="detectedAction">停止</div>
-      </div>
-
-      <button id="clearBtn" style="background:#dc2626; margin-top:auto;">ログを消去</button>
-    </div>
-
-    <!-- メイン対話・ログ表示パネル -->
-    <div class="card main-panel">
-      <h3>AI 返答・対話ログ</h3>
-      
-      <div class="chat-log" id="chatLog">
-        <div class="msg system">メッセージを入力して Gemini に指示を送信してください。</div>
-      </div>
-
-      <div class="input-group">
-        <textarea id="promptInput" placeholder="例: 障害物を避けて前に進んで"></textarea>
-        <button id="sendBtn">送信</button>
-      </div>
-    </div>
+  <div class="controls">
+    <input type="text" id="msgInput" placeholder="Scratchに送る文字を入力...">
+    <button id="sendBtn">送信</button>
   </div>
 
+  <!-- TurboWarp 埋め込み -->
+  <iframe id="twFrame" src="https://turbowarp.org/editor" allow="autoplay"></iframe>
+
   <script>
-    const apiKeyInput = document.getElementById('apiKey');
-    const modelSelect = document.getElementById('model');
-    const systemInput = document.getElementById('systemInstruction');
-    const promptInput = document.getElementById('promptInput');
+    const channel = new BroadcastChannel('turbowarp-bridge');
+    const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
-    const chatLog = document.getElementById('chatLog');
-    const detectedAction = document.getElementById('detectedAction');
-    const statusDiv = document.getElementById('status');
-    const clearBtn = document.getElementById('clearBtn');
+    const twFrame = document.getElementById('twFrame');
 
-    // ローカルストレージからの API キー自動復元
-    if (localStorage.getItem('gemini_api_key')) {
-      apiKeyInput.value = localStorage.getItem('gemini_api_key');
-    }
+    function send() {
+      const text = msgInput.value.trim();
+      if (!text) return;
 
-    apiKeyInput.addEventListener('change', () => {
-      localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
-    });
+      // BroadcastChannel 経由で送信
+      channel.postMessage(text);
 
-    clearBtn.addEventListener('click', () => {
-      chatLog.innerHTML = '<div class="msg system">ログをクリアしました。</div>';
-      detectedAction.textContent = '停止';
-    });
-
-    function addMessage(role, text) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `msg ${role}`;
-      msgDiv.textContent = text;
-      chatLog.appendChild(msgDiv);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    function extractAction(text) {
-      if (text.includes('前')) return '前';
-      if (text.includes('後') || text.includes('後ろ')) return '後';
-      if (text.includes('左')) return '左';
-      if (text.includes('右')) return '右';
-      return '停止';
-    }
-
-    async function sendToGemini() {
-      const apiKey = apiKeyInput.value.trim();
-      const prompt = promptInput.value.trim();
-      const model = modelSelect.value;
-      const systemInstruction = systemInput.value.trim();
-
-      if (!apiKey) {
-        alert('APIキーを入力してください');
-        return;
+      // iframe 内部へ直接 postMessage 送信
+      if (twFrame.contentWindow) {
+        twFrame.contentWindow.postMessage({ type: 'FROM_WEB', text: text }, '*');
       }
-      if (!prompt) return;
 
-      addMessage('user', prompt);
-      promptInput.value = '';
-      sendBtn.disabled = true;
-      statusDiv.textContent = 'Gemini 処理中...';
-
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-      const payload = {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] }
-      };
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        sendBtn.disabled = false;
-        statusDiv.textContent = '準備完了';
-
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-          const aiReply = data.candidates[0].content.parts[0].text;
-          addMessage('ai', aiReply);
-
-          // アクション抽出＆画面反映
-          const action = extractAction(aiReply);
-          detectedAction.textContent = action;
-        } else if (data.error) {
-          addMessage('system', `APIエラー: ${data.error.message}`);
-        } else {
-          addMessage('system', 'エラー: レスポンスを受信できませんでした');
-        }
-      } catch (err) {
-        sendBtn.disabled = false;
-        statusDiv.textContent = 'エラーが発生しました';
-        addMessage('system', `通信エラー: ${err.message}`);
-      }
+      msgInput.value = '';
     }
 
-    sendBtn.addEventListener('click', sendToGemini);
-    promptInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendToGemini();
-      }
+    sendBtn.addEventListener('click', send);
+    msgInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
     });
   </script>
 </body>
