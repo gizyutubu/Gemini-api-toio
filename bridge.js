@@ -4,18 +4,29 @@
   class WebToScratchBridge {
     constructor() {
       this.lastMessage = '';
-      this.receivedEvent = false;
 
-      // Web側と同じチャンネル名で待機
-      this.channel = new BroadcastChannel('turbowarp-bridge');
-      
-      this.channel.onmessage = (event) => {
-        this.lastMessage = String(event.data);
-        this.receivedEvent = true;
-        
-        // ハットブロック（〜のとき）を発火
+      const handleMessage = (msg) => {
+        this.lastMessage = String(msg);
         Scratch.vm.runtime.startHats('webToScratchBridge_whenReceived');
       };
+
+      // BroadcastChannel 受信
+      try {
+        const channel = new BroadcastChannel('turbowarp-bridge');
+        channel.onmessage = (e) => handleMessage(e.data);
+      } catch(e) {}
+
+      // localStorage 経由の受信
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'scratch_bridge_msg' && e.newValue) {
+          try {
+            const data = JSON.parse(e.newValue);
+            if (data && data.text) {
+              handleMessage(data.text);
+            }
+          } catch(err) {}
+        }
+      });
     }
 
     getInfo() {
@@ -28,8 +39,7 @@
           {
             opcode: 'whenReceived',
             blockType: Scratch.BlockType.HAT,
-            text: 'Webからメッセージを受信したとき',
-            isEdgeActivated: false
+            text: 'Webからメッセージを受信したとき'
           },
           {
             opcode: 'getLastMessage',
