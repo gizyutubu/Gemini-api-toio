@@ -5,7 +5,7 @@
     constructor() {
       this.apiKey = '';
       this.model = 'gemini-1.5-flash';
-      this.systemInstruction = 'あなたは toio ロボットの司令塔です。ユーザーの要望に応じて、toio を動かすための方向（前, 後, 左, 右, 停止）やパラメータを推論して出力してください。';
+      this.systemInstruction = 'あなたは toio ロボットの管理者です。ユーザーの要望に応じて、toio を動かすための方向（前, 後, 左, 右, 停止）やパラメータを推論して出力してください。';
       this.temperature = 0.7;
       this.maxTokens = 1024;
       this.chatHistory = [];
@@ -47,7 +47,7 @@
           {
             opcode: 'setSystemInstruction',
             blockType: Scratch.BlockType.COMMAND,
-            text: 'AIのシステム指示（役割）を [INSTRUCTION] に設定',
+            text: 'AIのシステム指示を [INSTRUCTION] に設定',
             arguments: {
               INSTRUCTION: {
                 type: Scratch.ArgumentType.STRING,
@@ -65,7 +65,7 @@
             }
           },
 
-          '--- AI 対話 & 推論 ---',
+          '対話 & 推論',
           {
             opcode: 'askGemini',
             blockType: Scratch.BlockType.REPORTER,
