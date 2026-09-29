@@ -2,83 +2,79 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Scratch 通信モニター</title>
+  <title>Scratch 通信送信パネル</title>
   <style>
     body {
-      margin: 0;
-      padding: 16px;
       background: #0f172a;
       color: #fff;
       font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      box-sizing: border-box;
-      gap: 12px;
+      padding: 20px;
+      margin: 0;
     }
-    .controls {
-      display: flex;
-      gap: 8px;
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
       background: #1e293b;
-      padding: 12px;
+      padding: 20px;
       border-radius: 8px;
     }
     input {
-      flex: 1;
+      width: 75%;
       padding: 10px;
       background: #0f172a;
       border: 1px solid #334155;
-      color: white;
+      color: #fff;
       border-radius: 6px;
-      font-size: 1rem;
     }
     button {
-      padding: 10px 20px;
+      padding: 10px 16px;
       background: #0d9488;
-      color: white;
+      color: #fff;
       border: none;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
     }
-    button:hover { background: #14b8a6; }
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      border-radius: 8px;
-      background: #000;
+    .status {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
     }
   </style>
 </head>
 <body>
 
-  <div class="controls">
-    <input type="text" id="msgInput" placeholder="Scratchに送る文字を入力...">
-    <button id="sendBtn">送信</button>
+  <div class="container">
+    <h2>Scratch 送信パネル</h2>
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="msgInput" placeholder="Scratchに送る文字を入力...">
+      <button id="sendBtn">送信</button>
+    </div>
+    <div class="status" id="statusLog">TurboWarp でプロジェクトを開いて受信待ちにしてください。</div>
   </div>
 
-  <!-- TurboWarp 埋め込み -->
-  <iframe id="twFrame" src="https://turbowarp.org/editor" allow="autoplay"></iframe>
-
   <script>
-    const channel = new BroadcastChannel('turbowarp-bridge');
     const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
-    const twFrame = document.getElementById('twFrame');
+    const statusLog = document.getElementById('statusLog');
 
     function send() {
       const text = msgInput.value.trim();
       if (!text) return;
 
-      // BroadcastChannel 経由で送信
-      channel.postMessage(text);
+      // BroadcastChannel への送信
+      try {
+        const channel = new BroadcastChannel('turbowarp-bridge');
+        channel.postMessage(text);
+      } catch (e) {}
 
-      // iframe 内部へ直接 postMessage 送信
-      if (twFrame.contentWindow) {
-        twFrame.contentWindow.postMessage({ type: 'FROM_WEB', text: text }, '*');
-      }
+      // localStorage 経由の送信（別タブ確実検知用）
+      localStorage.setItem('scratch_bridge_msg', JSON.stringify({
+        text: text,
+        time: Date.now()
+      }));
 
+      statusLog.textContent = `送信完了: "${text}"`;
       msgInput.value = '';
     }
 
